@@ -13,6 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
             <nav className="flex gap-4 text-sm text-gray-600">
               <Link href="/">Clients</Link>
+              {profile.role === "admin" && <Link href="/admin/library">Library</Link>}
               {profile.role === "admin" && <Link href="/admin/users">Team</Link>}
             </nav>
           </div>
