@@ -1,53 +1,62 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { requireStaff } from "@/lib/supabase/server";
 import { DEPARTMENT_LIBRARY } from "@/lib/departments";
+import { PageHeader, Pill } from "@/components/ui";
 import { SyncButton } from "./sync-button";
+import { DeleteDepartmentButton } from "./delete-department-button";
 
 export default async function LibraryPage() {
   const { supabase, profile } = await requireStaff();
-  if (profile.role !== "admin") redirect("/");
-  const { data: depts } = await supabase.from("departments").select("id, code, name, report_skeleton, questions(id)").order("sort");
+  const { data: depts } = await supabase.from("departments").select("id, code, name, description, is_custom, report_skeleton, questions(id), engagement_departments(id)").order("sort");
   const inCode = new Set(DEPARTMENT_LIBRARY.map((d) => d.code));
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Department library</h1>
-          <p className="text-sm text-gray-500">
-            Each department needs a questionnaire and a report outline before it can be assessed. Loading the library writes the latest definitions from the app into the database; running it again updates them without touching answers or reports.
-          </p>
-        </div>
-        <SyncButton />
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Department library"
+        subtitle="Every department here can be added to an assessment. Create your own for any business area — AI designs the report outline, supporting documents and questionnaire."
+        actions={
+          <>
+            {profile.role === "admin" && <SyncButton />}
+            <Link href="/admin/library/new" className="btn">
+              + Create department
+            </Link>
+          </>
+        }
+      />
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="border-b border-gray-100 text-left text-xs text-gray-500">
             <tr>
-              <th className="px-4 py-2">Department</th>
-              <th className="px-4 py-2">Report sections</th>
-              <th className="px-4 py-2">Questions</th>
-              <th className="px-4 py-2">Status</th>
+              <th className="px-5 py-2.5 font-medium">Department</th>
+              <th className="px-5 py-2.5 font-medium">Sections</th>
+              <th className="px-5 py-2.5 font-medium">Questions</th>
+              <th className="px-5 py-2.5 font-medium">Used in</th>
+              <th className="px-5 py-2.5 font-medium">Status</th>
+              <th className="px-5 py-2.5" />
             </tr>
           </thead>
           <tbody>
             {depts?.map((d) => {
               const sections = (d.report_skeleton as unknown[]).length;
               const ready = sections > 0 && d.questions.length > 0;
+              const used = d.engagement_departments.length;
               return (
-                <tr key={d.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2 font-medium">{d.name}</td>
-                  <td className="px-4 py-2">{sections}</td>
-                  <td className="px-4 py-2">{d.questions.length}</td>
-                  <td className="px-4 py-2">
-                    {ready ? (
-                      <span className="text-green-700">Ready</span>
-                    ) : inCode.has(d.code) ? (
-                      <span className="text-amber-700">Not loaded yet</span>
-                    ) : (
-                      <span className="text-gray-500">Not defined</span>
-                    )}
+                <tr key={d.id} className="border-t border-gray-50">
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2 font-medium">
+                      {d.name}
+                      {d.is_custom && <Pill tone="blue">Custom</Pill>}
+                    </div>
+                    <div className="line-clamp-1 text-xs text-gray-500">{d.description}</div>
                   </td>
+                  <td className="px-5 py-3">{sections}</td>
+                  <td className="px-5 py-3">{d.questions.length}</td>
+                  <td className="px-5 py-3">{used ? `${used} assessment${used === 1 ? "" : "s"}` : "—"}</td>
+                  <td className="px-5 py-3">
+                    {ready ? <Pill tone="green">Ready</Pill> : inCode.has(d.code) ? <Pill tone="amber">Not loaded</Pill> : <Pill>Not defined</Pill>}
+                  </td>
+                  <td className="px-5 py-3 text-right">{d.is_custom && !used && <DeleteDepartmentButton id={d.id} name={d.name} />}</td>
                 </tr>
               );
             })}

@@ -101,7 +101,17 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
           <SubmitButton className="btn-secondary" pendingText="Adding…">
             Add department
           </SubmitButton>
+          <Link href={`/admin/library/new?returnTo=${encodeURIComponent(`/engagements/${id}`)}`} className="btn-ghost">
+            or create a new one with AI
+          </Link>
         </form>
+      )}
+      {addable.length === 0 && (
+        <div className="flex justify-end">
+          <Link href={`/admin/library/new?returnTo=${encodeURIComponent(`/engagements/${id}`)}`} className="btn-secondary">
+            + Create a department with AI
+          </Link>
+        </div>
       )}
     </div>
   );

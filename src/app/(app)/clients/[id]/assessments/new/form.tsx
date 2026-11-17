@@ -17,7 +17,7 @@ export function NewAssessmentForm({ clientId, defaultTitle, departments }: { cli
   const ready = departments.filter((d) => d.ready);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const grouped = new Set(GROUPS.flatMap((g) => g.codes));
-  const groups = [...GROUPS, { title: "Other", codes: departments.filter((d) => !grouped.has(d.code)).map((d) => d.code) }].filter((g) => g.codes.length);
+  const groups = [...GROUPS, { title: "Custom departments", codes: departments.filter((d) => !grouped.has(d.code)).map((d) => d.code) }].filter((g) => g.codes.length);
 
   const toggle = (id: string) =>
     setPicked((p) => {
@@ -90,6 +90,12 @@ export function NewAssessmentForm({ clientId, defaultTitle, departments }: { cli
             </div>
           </div>
         ))}
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-gray-300 p-3 text-sm">
+          <span className="text-gray-600">Need a department that isn&apos;t listed?</span>
+          <Link href={`/admin/library/new?returnTo=${encodeURIComponent(`/clients/${clientId}/assessments/new`)}`} className="btn-secondary btn-sm">
+            + Create a department with AI
+          </Link>
+        </div>
       </div>
 
       <div className="flex justify-end gap-2">

@@ -7,12 +7,8 @@ export function TopNav({ isAdmin, name, role }: { isAdmin: boolean; name: string
   const links = [
     { href: "/", label: "Dashboard", active: path === "/" },
     { href: "/clients", label: "Clients", active: path.startsWith("/clients") || path.startsWith("/engagements") || path.startsWith("/reports") },
-    ...(isAdmin
-      ? [
-          { href: "/admin/library", label: "Library", active: path.startsWith("/admin/library") },
-          { href: "/admin/users", label: "Team", active: path.startsWith("/admin/users") },
-        ]
-      : []),
+    { href: "/admin/library", label: "Departments", active: path.startsWith("/admin/library") },
+    ...(isAdmin ? [{ href: "/admin/users", label: "Team", active: path.startsWith("/admin/users") }] : []),
   ];
   return (
     <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur">
