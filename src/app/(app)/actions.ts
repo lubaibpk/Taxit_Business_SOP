@@ -101,6 +101,16 @@ export async function createEngagement(form: FormData) {
   redirect(`/engagements/${data.id}`);
 }
 
+/** Deletes an assessment that has no reports (reports are deliverables and are never deleted this way). */
+export async function deleteEngagement(id: string, clientId: string) {
+  const { supabase } = await requireStaff();
+  const { count } = await supabase.from("reports").select("id", { count: "exact", head: true }).eq("engagement_id", id);
+  if (count) throw new Error("This assessment has reports and cannot be deleted.");
+  const { error } = await supabase.from("engagements").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/clients/${clientId}`);
+}
+
 export async function addDepartmentToEngagement(form: FormData) {
   const { supabase } = await requireStaff();
   const engagementId = str(form, "engagement_id")!;

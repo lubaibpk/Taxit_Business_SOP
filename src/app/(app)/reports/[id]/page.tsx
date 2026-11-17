@@ -1,31 +1,37 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/supabase/server";
+import { PageHeader, Pill, REPORT_STATUS } from "@/components/ui";
 import { ReportEditor } from "./report-editor";
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase, profile } = await requireStaff();
-  const { data: report } = await supabase.from("reports").select("*, departments(name, code), engagements(id, title, clients(name))").eq("id", id).single();
-  if (!report) notFound();
-  const [{ data: sections }, { data: comments }] = await Promise.all([
+  const [{ data: report }, { data: sections }] = await Promise.all([
+    supabase.from("reports").select("*, departments(name, code), engagements(id, title, clients(id, name))").eq("id", id).single(),
     supabase.from("report_sections").select("*").eq("report_id", id).order("sort"),
-    supabase.from("section_comments").select("*, profiles(full_name, email)").in(
-      "section_id",
-      (await supabase.from("report_sections").select("id").eq("report_id", id)).data?.map((s) => s.id) ?? [],
-    ).order("created_at"),
   ]);
+  if (!report) notFound();
+  const { data: comments } = await supabase
+    .from("section_comments")
+    .select("*, profiles(full_name, email)")
+    .in("section_id", (sections ?? []).map((s) => s.id))
+    .order("created_at");
 
+  const eng = report.engagements;
+  const st = REPORT_STATUS[report.status];
   return (
     <div className="space-y-5">
-      <div>
-        <Link href={`/engagements/${report.engagements.id}`} className="text-sm text-blue-800">
-          ← {report.engagements.clients.name} · {report.engagements.title}
-        </Link>
-        <h1 className="mt-1 text-xl font-semibold">
-          {report.departments.name} report · {report.language === "ar" ? "Arabic" : "English"} · v{report.version}
-        </h1>
-      </div>
+      <PageHeader
+        crumbs={[
+          { href: "/clients", label: "Clients" },
+          { href: `/clients/${eng.clients.id}`, label: eng.clients.name },
+          { href: `/engagements/${eng.id}`, label: eng.title },
+          { href: `/engagements/${eng.id}/${report.departments.code}?step=report`, label: report.departments.name },
+        ]}
+        title={`${report.departments.name} report`}
+        subtitle={`${report.language === "ar" ? "Arabic" : "English"} · version ${report.version}`}
+        actions={<Pill tone={st.tone}>{st.label}</Pill>}
+      />
       <ReportEditor
         reportId={id}
         reportStatus={report.status}

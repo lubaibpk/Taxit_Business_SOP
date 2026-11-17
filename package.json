@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.9.0",
+    "@sparticuz/chromium": "^153.0.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "docx": "^9.15.4",
     "exceljs": "^4.4.0",
     "next": "^15.5.29",
+    "puppeteer-core": "^25.18.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zod": "^4.6.7"
