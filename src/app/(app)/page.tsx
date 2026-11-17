@@ -1,30 +1,73 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/supabase/server";
-import { EmptyState, PageHeader, Pill, Progress, REPORT_STATUS, Stat } from "@/components/ui";
+import { ScoreBadge } from "@/components/score-badge";
+import { EmptyState, PageHeader, Stat } from "@/components/ui";
+
+type Eng = {
+  id: string;
+  title: string;
+  round: number;
+  assessment_date: string;
+  created_at: string;
+  engagement_departments: { department_id: string; score: number | null; findings: string | null }[];
+  reports: { id: string; status: string; department_id: string }[];
+};
+
+/** The assessment a client's row opens: the latest one with work in it, else the latest one. */
+function mainEngagement(engs: Eng[]): Eng | undefined {
+  const byNewest = [...engs].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return byNewest.find((e) => e.reports.length || e.engagement_departments.some((d) => d.score !== null || d.findings)) ?? byNewest[0];
+}
 
 export default async function Dashboard() {
   const { supabase, profile } = await requireStaff();
-  const [{ count: clientCount }, { data: engagements }, { data: reports }] = await Promise.all([
-    supabase.from("clients").select("id", { count: "exact", head: true }),
-    supabase.from("engagements").select("id, status"),
-    supabase
-      .from("reports")
-      .select("id, status, language, version, created_at, departments(name), engagements(id, title, clients(name)), report_sections(status, content)")
-      .order("created_at", { ascending: false })
-      .limit(12),
-  ]);
+  const { data: clients } = await supabase
+    .from("clients")
+    .select("id, name, industry, city, logo_path, created_at, engagements(id, title, round, assessment_date, created_at, engagement_departments(department_id, score, findings), reports(id, status, department_id))")
+    .order("created_at", { ascending: false });
 
-  const active = (engagements ?? []).filter((e) => e.status === "in_progress").length;
-  const all = reports ?? [];
-  const inReview = all.filter((r) => r.status === "in_review").length;
-  const approved = all.filter((r) => r.status === "approved").length;
+  const rows = (clients ?? []).map((c) => {
+    const eng = mainEngagement((c.engagements ?? []) as Eng[]);
+    const eds = eng?.engagement_departments ?? [];
+    const total = eds.length;
+    const reports = eng?.reports ?? [];
+    const withReport = new Set(reports.map((r) => r.department_id));
+    const approvedDepts = new Set(reports.filter((r) => r.status === "approved").map((r) => r.department_id));
+    const inReview = reports.filter((r) => r.status === "in_review").length;
+    const scored = eds.filter((d) => d.score !== null);
+    const health = scored.length ? Math.round((scored.reduce((s, d) => s + Number(d.score), 0) / scored.length) * 10) / 10 : null;
+    const stages = [
+      { label: "Questionnaire", done: scored.length },
+      { label: "Findings", done: eds.filter((d) => d.findings).length },
+      { label: "Reports", done: eds.filter((d) => withReport.has(d.department_id)).length },
+      { label: "Approved", done: eds.filter((d) => approvedDepts.has(d.department_id)).length },
+    ];
+    const current = stages.find((s) => s.done < total);
+    const next = !eng
+      ? "Start assessment"
+      : !current
+        ? "All approved — download"
+        : current.label === "Questionnaire"
+          ? "Answer questionnaires"
+          : current.label === "Findings"
+            ? "Add findings"
+            : current.label === "Reports"
+              ? "Create reports"
+              : inReview
+                ? "Approve reports"
+                : "Review reports";
+    return { c, eng, total, stages, health, next, href: eng ? `/engagements/${eng.id}` : `/clients/${c.id}/assessments/new` };
+  });
+
+  const active = rows.filter((r) => r.eng && r.stages.some((s) => s.done < r.total)).length;
+  const allReports = rows.flatMap((r) => r.eng?.reports ?? []);
   const canApprove = profile.role === "admin" || profile.role === "reviewer";
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={`Welcome back${profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}`}
-        subtitle="Pick up where you left off, or start a new client assessment."
+        subtitle="Each client’s journey at a glance. Click a client to continue their assessment."
         actions={
           <Link href="/clients/new" className="btn">
             + New client
@@ -33,55 +76,80 @@ export default async function Dashboard() {
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Clients" value={clientCount ?? 0} />
-        <Stat label="Active assessments" value={active} />
-        <Stat label="Reports in review" value={inReview} hint={canApprove && inReview ? "Waiting for your approval" : undefined} />
-        <Stat label="Approved reports" value={approved} />
+        <Stat label="Clients" value={rows.length} />
+        <Stat label="Clients in progress" value={active} />
+        <Stat label="Reports in review" value={allReports.filter((r) => r.status === "in_review").length} hint={canApprove ? "Waiting for your approval" : undefined} />
+        <Stat label="Approved reports" value={allReports.filter((r) => r.status === "approved").length} />
       </div>
 
       <section className="space-y-3">
-        <h2 className="section-title">Recent reports</h2>
-        {all.length === 0 ? (
-          <EmptyState
-            title="No reports yet"
-            body="Create a client, start an assessment, answer the questionnaire and generate a report. It will show up here."
-            action={
-              <Link href="/clients/new" className="btn">
-                Create your first client
-              </Link>
-            }
-          />
+        <h2 className="section-title">Clients</h2>
+        {rows.length === 0 ? (
+          <EmptyState title="No clients yet" body="Create a client and start their assessment. Their journey will show here." action={<Link href="/clients/new" className="btn">Create your first client</Link>} />
         ) : (
           <div className="card divide-y divide-gray-100 p-0">
-            {all.map((r) => {
-              const secs = (r.report_sections ?? []) as { status: string; content: { blocks?: unknown[] } | null }[];
-              const written = secs.filter((s) => s.content?.blocks?.length).length;
-              const ok = secs.filter((s) => s.status === "approved").length;
-              const eng = r.engagements as unknown as { id: string; title: string; clients: { name: string } };
-              const st = REPORT_STATUS[r.status];
-              const next = written < secs.length ? "Write sections" : r.status === "draft" ? "Review sections" : r.status === "in_review" ? (canApprove ? "Approve" : "Awaiting approval") : "Download";
-              return (
-                <Link key={r.id} href={`/reports/${r.id}`} className="flex flex-wrap items-center gap-4 px-5 py-3 hover:bg-gray-50">
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{eng.clients.name}</div>
-                    <div className="truncate text-xs text-gray-500">
-                      {(r.departments as unknown as { name: string }).name} · {r.language === "ar" ? "Arabic" : "English"} v{r.version}
-                    </div>
+            <div className="hidden grid-cols-[minmax(0,1.6fr)_minmax(0,2.4fr)_140px_170px] gap-6 px-5 py-2.5 text-xs text-gray-500 lg:grid">
+              <span>Client</span>
+              <span>Journey (departments done / total)</span>
+              <span>Health</span>
+              <span className="text-right">Next step</span>
+            </div>
+            {rows.map(({ c, eng, total, stages, health, next, href }) => (
+              <div key={c.id} className="grid items-center gap-4 px-5 py-4 hover:bg-gray-50 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,2.4fr)_140px_170px] lg:gap-6">
+                <div className="min-w-0">
+                  <Link href={href} className="block truncate font-medium text-brand hover:underline">
+                    {c.name}
+                  </Link>
+                  <div className="truncate text-xs text-gray-500">
+                    {eng ? `${eng.title} · round ${eng.round} · ${eng.assessment_date}` : "No assessment yet"}
+                    {" · "}
+                    <Link href={`/clients/${c.id}`} className="hover:text-brand hover:underline">
+                      client profile
+                    </Link>
                   </div>
-                  <div className="w-40">
-                    <div className="mb-1 flex justify-between text-[11px] text-gray-500">
-                      <span>
-                        {written}/{secs.length} written
-                      </span>
-                      <span>{ok} approved</span>
-                    </div>
-                    <Progress value={written + ok} max={secs.length * 2} />
-                  </div>
-                  <Pill tone={st.tone}>{st.label}</Pill>
-                  <span className="w-36 text-right text-xs font-medium text-brand">{next} →</span>
-                </Link>
-              );
-            })}
+                </div>
+
+                {eng ? (
+                  <Link href={href} className="grid grid-cols-4 gap-2" title="Open assessment">
+                    {stages.map((s, i) => {
+                      const done = total > 0 && s.done >= total;
+                      const started = s.done > 0;
+                      return (
+                        <div key={s.label} className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold ${
+                                done ? "bg-green-600 text-white" : started ? "border border-brand text-brand" : "border border-gray-300 text-gray-400"
+                              }`}
+                            >
+                              {done ? "✓" : i + 1}
+                            </span>
+                            <span className={`truncate text-xs ${started ? "text-gray-800" : "text-gray-400"}`}>{s.label}</span>
+                          </div>
+                          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-gray-100">
+                            <div className={`h-full ${done ? "bg-green-600" : "bg-brand"}`} style={{ width: `${total ? (s.done / total) * 100 : 0}%` }} />
+                          </div>
+                          <div className="mt-1 text-[11px] text-gray-500">
+                            {s.done}/{total}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </Link>
+                ) : (
+                  <span className="text-xs text-gray-400">—</span>
+                )}
+
+                <div>
+                  <ScoreBadge score={health} />
+                </div>
+                <div className="lg:text-right">
+                  <Link href={href} className="btn btn-sm">
+                    {next} →
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </section>
