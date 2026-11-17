@@ -61,7 +61,33 @@ export type SectionJob = {
   previousText?: string | null; // current draft, when regenerating with instructions
 };
 
+/** Writes one section; if the model's answer can't be used, tries once more before giving up. */
 export async function writeSection(job: SectionJob): Promise<Block[]> {
+  try {
+    return await attemptSection(job);
+  } catch (e) {
+    if (e instanceof UnusableOutput) {
+      try {
+        return await attemptSection(job);
+      } catch (e2) {
+        if (e2 instanceof UnusableOutput) {
+          console.error("Unusable section output", job.sectionTitle, e2.detail);
+          throw new Error(`The AI's answer could not be used twice in a row (${e2.detail}). Try again, or add instructions to guide it.`);
+        }
+        throw e2;
+      }
+    }
+    throw e;
+  }
+}
+
+class UnusableOutput extends Error {
+  constructor(public detail: string) {
+    super(detail);
+  }
+}
+
+async function attemptSection(job: SectionJob): Promise<Block[]> {
   const client = new Anthropic();
 
   const ask = [
@@ -107,17 +133,32 @@ export async function writeSection(job: SectionJob): Promise<Block[]> {
   if (message.stop_reason === "refusal") throw new Error("The model declined to write this section. Edit the instructions and try again.");
   if (message.stop_reason === "max_tokens") throw new Error("The section was too long and got cut off. Ask for a shorter version in the instructions.");
 
-  const text = message.content
-    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("");
-  let parsed: unknown;
+  // If a fallback model took over mid-answer, only the text after the switch belongs to the final answer.
+  const content = message.content as { type: string; text?: string }[];
+  const lastFallback = content.map((b) => b.type).lastIndexOf("fallback");
+  const text = content
+    .slice(lastFallback + 1)
+    .filter((b) => b.type === "text")
+    .map((b) => b.text ?? "")
+    .join("")
+    .trim();
+
+  let parsed: unknown = null;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error("The model returned content that could not be read. Please regenerate.");
+    // tolerate stray text around the JSON object
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        parsed = JSON.parse(text.slice(start, end + 1));
+      } catch {
+        parsed = null;
+      }
+    }
   }
   const blocks = cleanBlocks(parsed);
-  if (!blocks.length) throw new Error("The model returned an empty section. Please regenerate.");
+  if (!blocks.length) throw new UnusableOutput(`stop: ${message.stop_reason}, ${text.length} chars: ${text.slice(0, 120).replace(/\s+/g, " ")}`);
   return blocks;
 }

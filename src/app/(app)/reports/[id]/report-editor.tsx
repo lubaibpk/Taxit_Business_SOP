@@ -310,13 +310,20 @@ function SectionPanel({
             <BlockView blocks={blocks} />
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-gray-300 py-10 text-center text-sm text-gray-500">
-            This section hasn&apos;t been written yet.
-            <div className="mt-3">
-              <button className="btn" onClick={() => onGenerate(instructions || undefined, false)}>
-                Write this section with AI
-              </button>
+          <div className="space-y-3 rounded-lg border border-dashed border-gray-300 p-5">
+            <div className="text-sm text-gray-600">
+              This section hasn&apos;t been written yet. Add your own points for it (optional) — the AI will build the section around them, together with your department findings.
             </div>
+            <textarea
+              className="input min-h-28"
+              dir={rtl ? "rtl" : "ltr"}
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              placeholder={"e.g.\n- Approval bands: up to SAR 50,000 Credit Controller, above that Mansoor\n- Mention the weekly Sunday collection meeting\n- Keep it to one page"}
+            />
+            <button className="btn" onClick={() => onGenerate(instructions || undefined, false)}>
+              Write this section with AI
+            </button>
           </div>
         )}
 

@@ -5,12 +5,13 @@ export type SkeletonItem = { key: string; title: string; guidance: string; tier?
 
 /** Loads everything known about one engagement + department and turns it into the model's briefing. */
 export async function buildClientContext(supabase: SupabaseClient, engagementId: string, departmentId: string) {
-  const [{ data: eng }, { data: dept }, { data: questions }, { data: responses }, { data: metrics }] = await Promise.all([
+  const [{ data: eng }, { data: dept }, { data: questions }, { data: responses }, { data: metrics }, { data: ed }] = await Promise.all([
     supabase.from("engagements").select("*, clients(*)").eq("id", engagementId).single(),
     supabase.from("departments").select("*").eq("id", departmentId).single(),
     supabase.from("questions").select("*").eq("department_id", departmentId).order("sort"),
     supabase.from("responses").select("*").eq("engagement_id", engagementId),
     supabase.from("metrics").select("*").eq("engagement_id", engagementId).eq("department_id", departmentId),
+    supabase.from("engagement_departments").select("findings").eq("engagement_id", engagementId).eq("department_id", departmentId).maybeSingle(),
   ]);
   if (!eng || !dept) throw new Error("Engagement or department not found");
   const c = eng.clients;
@@ -45,6 +46,21 @@ export async function buildClientContext(supabase: SupabaseClient, engagementId:
     `Overall maturity score: ${scores.score ?? "not assessed"} / 5 (${scoreBand(scores.score).label}); ${scores.answered} of ${scores.scorable} questions answered.`,
   );
   for (const [d, s] of Object.entries(scores.dimension_scores)) lines.push(`- ${d}: ${s} / 5`);
+
+  if (ed?.findings?.trim()) {
+    lines.push(
+      "",
+      "CONSULTANT'S OWN FINDINGS & NOTES — HIGHEST PRIORITY INPUT",
+      "These are first-hand observations from the consulting team. Build the report around them: reflect every relevant",
+      "point in the appropriate section, use the names, figures and limits given here exactly, follow any 'must include /",
+      "must avoid' instructions, and prefer these notes over questionnaire answers if they conflict.",
+      "---",
+      ed.findings.trim(),
+      "---",
+    );
+  } else {
+    lines.push("", "No consultant notes were provided for this department; rely on the questionnaire and data.");
+  }
 
   lines.push("", "QUESTIONNAIRE ANSWERS (maturity 0 = not in place … 4 = monitored & improved)");
   for (const q of qs) {

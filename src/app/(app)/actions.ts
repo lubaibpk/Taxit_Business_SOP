@@ -142,6 +142,18 @@ export async function saveResponses(engagementId: string, departmentId: string, 
   return { ok: true };
 }
 
+/** Saves the consultant's free-text findings for one department of an assessment. */
+export async function saveFindings(engagementId: string, departmentId: string, findings: string) {
+  const { supabase } = await requireStaff();
+  const { error } = await supabase
+    .from("engagement_departments")
+    .update({ findings: findings.trim() || null, findings_updated_at: new Date().toISOString() })
+    .eq("engagement_id", engagementId)
+    .eq("department_id", departmentId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/engagements/${engagementId}`);
+}
+
 async function rescore(engagementId: string, departmentId: string) {
   const { supabase } = await requireStaff();
   const [{ data: qs }, { data: rs }] = await Promise.all([

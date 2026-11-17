@@ -37,15 +37,51 @@ export const sectionJsonSchema = {
   },
 } as const;
 
+/** Finds the list of blocks in whatever shape the model returned it. */
+function findBlockList(raw: unknown): unknown[] | null {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try {
+      return findBlockList(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }
+  if (raw && typeof raw === "object") {
+    const o = raw as Record<string, unknown>;
+    for (const k of ["blocks", "content", "section", "sections", "items"]) {
+      const found = o[k] !== undefined ? findBlockList(o[k]) : null;
+      if (found?.length) return found;
+    }
+    for (const v of Object.values(o)) if (Array.isArray(v) && v.length && typeof v[0] === "object") return v;
+  }
+  return null;
+}
+
 /** Drops malformed blocks so one bad block never breaks rendering. */
 export function cleanBlocks(raw: unknown): Block[] {
-  const list = (raw as { blocks?: unknown[] })?.blocks;
-  if (!Array.isArray(list)) return [];
+  const list = findBlockList(raw);
+  if (!list) return [];
   const out: Block[] = [];
-  for (const b of list as Record<string, unknown>[]) {
+  for (const item of list) {
+    if (typeof item === "string") {
+      if (item.trim()) out.push({ type: "paragraph", text: item.trim() });
+      continue;
+    }
+    const b = item as Record<string, unknown>;
     const str = (v: unknown) => (typeof v === "string" ? v : "");
     const arr = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x ?? "")) : []);
-    switch (b?.type) {
+    // infer the type when the model left it out or used a synonym
+    let type = str(b?.type).toLowerCase();
+    if (!["heading", "paragraph", "bullets", "numbered", "table", "callout"].includes(type)) {
+      if (type.startsWith("bullet") || type === "list") type = "bullets";
+      else if (type.includes("number") || type === "ordered") type = "numbered";
+      else if (Array.isArray(b?.rows) || Array.isArray(b?.headers)) type = "table";
+      else if (b?.title && Array.isArray(b?.items)) type = "callout";
+      else if (Array.isArray(b?.items)) type = "bullets";
+      else if (str(b?.text)) type = type.startsWith("h") ? "heading" : "paragraph";
+    }
+    switch (type) {
       case "heading":
         if (str(b.text)) out.push({ type: "heading", text: str(b.text), level: b.level === 3 ? 3 : 2 });
         break;
@@ -54,7 +90,7 @@ export function cleanBlocks(raw: unknown): Block[] {
         break;
       case "bullets":
       case "numbered":
-        if (arr(b.items).length) out.push({ type: b.type, items: arr(b.items) });
+        if (arr(b.items).length) out.push({ type, items: arr(b.items) });
         break;
       case "callout":
         out.push({ type: "callout", title: str(b.title), items: arr(b.items), tone: b.tone === "info" ? "info" : "critical" });

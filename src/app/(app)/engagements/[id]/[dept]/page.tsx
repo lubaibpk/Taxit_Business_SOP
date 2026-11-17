@@ -7,9 +7,10 @@ import { SubmitButton } from "@/components/submit-button";
 import { deptSteps, loadEngagementProgress } from "@/lib/progress";
 import { Questionnaire } from "./questionnaire";
 import { UploadWizard } from "./upload-wizard";
+import { FindingsEditor } from "./findings-editor";
 import { createReport } from "../../../actions";
 
-type Step = "questions" | "data" | "report";
+type Step = "questions" | "notes" | "data" | "report";
 
 export default async function DepartmentPage({ params, searchParams }: { params: Promise<{ id: string; dept: string }>; searchParams: Promise<{ step?: string }> }) {
   const { id, dept: code } = await params;
@@ -30,14 +31,17 @@ export default async function DepartmentPage({ params, searchParams }: { params:
   const client = eng.clients as unknown as { id: string; name: string };
   const hasData = (dept.supported_datasets as string[]).length > 0;
 
-  const step: Step = rawStep === "data" && hasData ? "data" : rawStep === "report" ? "report" : rawStep === "questions" ? "questions" : p.answered < p.questions ? "questions" : hasData && !p.dataUploaded ? "data" : "report";
+  const step: Step =
+    rawStep === "data" && hasData ? "data" : rawStep === "report" ? "report" : rawStep === "notes" ? "notes" : rawStep === "questions" ? "questions" : p.answered < p.questions ? "questions" : !p.findings ? "notes" : hasData && !p.dataUploaded ? "data" : "report";
   const base = `/engagements/${id}/${code}`;
   const tabs: { key: Step; label: string }[] = [
     { key: "questions", label: `1. Questionnaire (${p.answered}/${p.questions})` },
-    ...(hasData ? [{ key: "data" as Step, label: `2. Client data${p.dataUploaded ? " ✓" : ""}` }] : []),
-    { key: "report", label: `${hasData ? 3 : 2}. Report` },
+    { key: "notes", label: `2. Your findings${p.findings ? " ✓" : ""}` },
+    ...(hasData ? [{ key: "data" as Step, label: `3. Client data${p.dataUploaded ? " ✓" : ""}` }] : []),
+    { key: "report", label: `${hasData ? 4 : 3}. Report` },
   ];
-  const afterQuestions = hasData ? `${base}?step=data` : `${base}?step=report`;
+  const afterQuestions = `${base}?step=notes`;
+  const afterNotes = hasData ? `${base}?step=data` : `${base}?step=report`;
 
   return (
     <div className="space-y-6">
@@ -69,6 +73,10 @@ export default async function DepartmentPage({ params, searchParams }: { params:
       </div>
 
       {step === "questions" && <Questionnaire engagementId={id} departmentId={dept.id} questions={questions ?? []} responses={responses ?? []} nextHref={afterQuestions} />}
+
+      {step === "notes" && (
+        <FindingsEditor engagementId={id} departmentId={dept.id} initial={p.findings ?? ""} updatedAt={p.findingsUpdatedAt} nextHref={afterNotes} />
+      )}
 
       {step === "data" && hasData && (
         <section className="space-y-4">

@@ -12,6 +12,8 @@ export type DeptProgress = {
   questions: number;
   dataSupported: boolean;
   dataUploaded: boolean;
+  findings: string | null;
+  findingsUpdatedAt: string | null;
   latestReport: { id: string; status: string; language: string; version: number; written: number; approved: number; total: number } | null;
   reports: { id: string; status: string; language: string; version: number }[];
   next: { label: string; href: string };
@@ -21,7 +23,7 @@ export async function loadEngagementProgress(supabase: SupabaseClient, engagemen
   const [{ data: eds }, { data: responses }, { data: uploads }, { data: reports }] = await Promise.all([
     supabase
       .from("engagement_departments")
-      .select("score, dimension_scores, departments(id, code, name, description, supported_datasets, sort, questions(id, answer_type, weight))")
+      .select("score, dimension_scores, findings, findings_updated_at, departments(id, code, name, description, supported_datasets, sort, questions(id, answer_type, weight))")
       .eq("engagement_id", engagementId),
     supabase.from("responses").select("question_id, value").eq("engagement_id", engagementId),
     supabase.from("data_uploads").select("dataset_type").eq("engagement_id", engagementId),
@@ -38,6 +40,8 @@ export async function loadEngagementProgress(supabase: SupabaseClient, engagemen
   type Ed = {
     score: number | null;
     dimension_scores: Record<string, number> | null;
+    findings: string | null;
+    findings_updated_at: string | null;
     departments: { id: string; code: string; name: string; description: string | null; supported_datasets: string[]; sort: number; questions: { id: string; answer_type: string; weight: number }[] };
   };
 
@@ -67,6 +71,7 @@ export async function loadEngagementProgress(supabase: SupabaseClient, engagemen
       const base = `/engagements/${engagementId}/${d.code}`;
       let next: DeptProgress["next"];
       if (answered < scorable.length) next = { label: answered ? "Continue questionnaire" : "Start questionnaire", href: `${base}?step=questions` };
+      else if (!latestReport && !ed.findings) next = { label: "Add your findings", href: `${base}?step=notes` };
       else if (!latestReport) next = { label: dataSupported && !dataUploaded ? "Upload data or create report" : "Create report", href: `${base}?step=${dataSupported && !dataUploaded ? "data" : "report"}` };
       else if (latestReport.written < latestReport.total) next = { label: "Write report sections", href: `/reports/${latestReport.id}` };
       else if (latestReport.status !== "approved") next = { label: "Review & approve", href: `/reports/${latestReport.id}` };
@@ -83,6 +88,8 @@ export async function loadEngagementProgress(supabase: SupabaseClient, engagemen
         questions: scorable.length,
         dataSupported,
         dataUploaded,
+        findings: ed.findings,
+        findingsUpdatedAt: ed.findings_updated_at,
         latestReport,
         reports: deptReports.map((r) => ({ id: r.id, status: r.status, language: r.language, version: r.version })),
         next,
@@ -101,6 +108,7 @@ export function deptSteps(p: DeptProgress, engagementId: string) {
   const steps: { label: string; state: S; href?: string; detail?: string }[] = [
     { label: "Questionnaire", state: qDone ? "done" : "current", href: `${base}?step=questions`, detail: `${p.answered}/${p.questions} answered` },
   ];
+  steps.push({ label: "Your findings", state: p.findings ? "done" : qDone ? "current" : "todo", href: `${base}?step=notes`, detail: p.findings ? "Added" : "Optional" });
   if (p.dataSupported)
     steps.push({ label: "Client data", state: p.dataUploaded ? "done" : qDone ? "current" : "todo", href: `${base}?step=data`, detail: p.dataUploaded ? "Uploaded" : "Optional" });
   steps.push(

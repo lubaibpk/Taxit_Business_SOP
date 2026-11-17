@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/supabase/server";
 import { PageHeader, Pill, REPORT_STATUS } from "@/components/ui";
@@ -30,7 +31,14 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         ]}
         title={`${report.departments.name} report`}
         subtitle={`${report.language === "ar" ? "Arabic" : "English"} · version ${report.version}`}
-        actions={<Pill tone={st.tone}>{st.label}</Pill>}
+        actions={
+          <>
+            <Link href={`/engagements/${eng.id}/${report.departments.code}?step=notes`} className="btn-secondary btn-sm">
+              ✎ Your findings & notes
+            </Link>
+            <Pill tone={st.tone}>{st.label}</Pill>
+          </>
+        }
       />
       <ReportEditor
         reportId={id}
