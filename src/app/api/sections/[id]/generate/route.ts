@@ -4,7 +4,8 @@ import { buildClientContext } from "@/lib/report-context";
 import { writeSection } from "@/lib/ai/write-section";
 import { blocksToText, type Block } from "@/lib/blocks";
 
-export const maxDuration = 800; // long sections (SOPs, policies) can take several minutes
+// 300s is the Vercel Hobby limit; on a Pro plan raise this to 800 for the longest sections (SOPs, policies)
+export const maxDuration = 300;
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

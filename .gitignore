@@ -48,3 +48,4 @@ next-env.d.ts
 *.docx
 !/src/**/templates/*.docx
 !.env.example
+/.claude/
