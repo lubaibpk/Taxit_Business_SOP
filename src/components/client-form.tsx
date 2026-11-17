@@ -1,4 +1,5 @@
 import { saveClient } from "@/app/(app)/actions";
+import { SubmitButton } from "@/components/submit-button";
 
 type Client = {
   id?: string;
@@ -79,7 +80,7 @@ export function ClientForm({ client }: { client?: Client }) {
         <label className="label">Client logo (PNG or JPG, under 2 MB)</label>
         <input type="file" name="logo" accept="image/png,image/jpeg" className="text-sm" />
       </div>
-      <button className="btn">{c.id ? "Save changes" : "Create client"}</button>
+      <SubmitButton pendingText="Saving…">{c.id ? "Save changes" : "Create client"}</SubmitButton>
     </form>
   );
 }

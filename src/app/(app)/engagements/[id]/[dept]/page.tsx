@@ -5,6 +5,7 @@ import { RagDot, ScoreBadge } from "@/components/score-badge";
 import { Questionnaire } from "./questionnaire";
 import { UploadWizard } from "./upload-wizard";
 import { createReport } from "../../../actions";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function DepartmentPage({ params }: { params: Promise<{ id: string; dept: string }> }) {
   const { id, dept: code } = await params;
@@ -94,7 +95,7 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
               <option value="ar">Arabic</option>
             </select>
           </div>
-          <button className="btn">Create report</button>
+          <SubmitButton pendingText="Creating…">Create report</SubmitButton>
         </form>
       </section>
     </div>

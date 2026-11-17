@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/supabase/server";
 import { ScoreBadge } from "@/components/score-badge";
 import { addDepartmentToEngagement } from "../../actions";
+import { ensureDepartmentsLoaded } from "@/lib/departments/sync";
 
 export default async function EngagementPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase } = await requireStaff();
+  await ensureDepartmentsLoaded(supabase);
   const [{ data: eng }, { data: eds }, { data: reports }, { data: allDepts }] = await Promise.all([
     supabase.from("engagements").select("*, clients(id, name)").eq("id", id).single(),
     supabase.from("engagement_departments").select("*, departments(id, code, name, description)").eq("engagement_id", id),

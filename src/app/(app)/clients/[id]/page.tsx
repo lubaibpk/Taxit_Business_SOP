@@ -3,10 +3,13 @@ import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/supabase/server";
 import { ClientForm } from "@/components/client-form";
 import { createEngagement } from "../../actions";
+import { ensureDepartmentsLoaded } from "@/lib/departments/sync";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase } = await requireStaff();
+  await ensureDepartmentsLoaded(supabase);
   const [{ data: client }, { data: engagements }, { data: departments }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase.from("engagements").select("id, title, round, assessment_date, status").eq("client_id", id).order("round", { ascending: false }),
@@ -78,7 +81,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
               })}
             </div>
           </div>
-          <button className="btn">Start assessment</button>
+          <SubmitButton pendingText="Starting…">Start assessment</SubmitButton>
         </form>
       </section>
 
