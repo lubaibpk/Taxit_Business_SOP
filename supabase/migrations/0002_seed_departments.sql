@@ -1,0 +1,78 @@
+-- Department library. Credit & Collections is fully defined (Phase 1);
+-- the other departments are listed so they can be selected once their questions are added.
+
+insert into public.departments (code, name, name_ar, description, report_title, supported_datasets, sort, report_skeleton) values
+('credit', 'Credit & Collections', 'الائتمان والتحصيل',
+ 'Customer credit onboarding, limits, risk rating, receivable ageing, collections, security cheques, bad debt and legal escalation.',
+ 'Credit Management, Receivables Control & Collection Governance Operating System',
+ '{ar_ageing}', 10,
+ '[
+  {"key":"exec_summary","title":"Executive Summary — Credit & Receivables Maturity Assessment","guidance":"Business context (who the client is, branches, what they sell, why receivables matter for them). State the overall maturity score. A boxed list titled CRITICAL CREDIT & COLLECTION GAPS — CURRENT STATE built only from the questionnaire answers rated 0–1 and from red metrics. A short paragraph on what this report delivers. If AR data was provided, quote the headline figures (total AR, % overdue, % over 90 days, DSO, top-10 concentration)."},
+  {"key":"governance","title":"Credit Governance Architecture — Roles, Accountability & Reporting","guidance":"Table: Role | Primary credit responsibility | Reports to | KPI accountability | Meeting obligation. Use the client''s real people/positions where known. Include segregation of duties between sales and finance."},
+  {"key":"onboarding","title":"Customer Credit Onboarding — KYC, Verification & Risk Assessment","guidance":"KYC document list for Saudi customers (CR via Wathq/Maroof, VAT certificate verified on ZATCA, national address, ID of owner/signatory, bank details, trade references). Onboarding stages table with responsible and timeline. Customer risk assessment scoring criteria."},
+  {"key":"approval","title":"Credit Approval Governance — Limits, Terms & Authority Matrix","guidance":"Authority matrix table by credit limit band in SAR (scale bands to the client size) with approver and documents required. Standard terms by customer class."},
+  {"key":"risk_rating","title":"Customer Risk Classification & Rating System","guidance":"Rating scale (e.g. GREEN/AMBER/RED/BLACK) with criteria, credit action and review frequency per rating. Link to customer class A/B/C."},
+  {"key":"limits","title":"Credit Limit Management & Control System","guidance":"How limits are set, enforced in the ERP (name the client''s ERP), temporary excess approvals, annual review, automatic block rules."},
+  {"key":"ageing","title":"Receivable Ageing Governance — Classification, Escalation & Priority","guidance":"Ageing buckets with status, action, owner and escalation level. If AR data exists, include a table of the actual bucket values and percentages and comment on them. Priority ranking of accounts."},
+  {"key":"collections","title":"Collection Follow-Up Operating System","guidance":"Daily/weekly collection routine, follow-up log fields, promise-to-pay tracking, weekly collection forecast vs actual, communication scripts and escalation ladder."},
+  {"key":"sales_coordination","title":"Sales & Credit Coordination Framework","guidance":"How sales and finance work together: credit checks before orders, blocked-customer rules, salesman responsibility for collections, incentive linkage to collections."},
+  {"key":"security","title":"Customer Security Management — Cheques, Guarantees & Collateral","guidance":"Security instruments used in KSA (promissory notes / sanad lil-amr enforceable via Najiz, post-dated cheques, bank guarantees). Security register and custody controls."},
+  {"key":"profitability","title":"Customer Profitability & Exposure Analysis Framework","guidance":"How to measure customer profitability after discounts, returns and cost of credit days. Exposure concentration analysis — use top-customer data if provided."},
+  {"key":"bad_debt","title":"Bad Debt, Recovery & Legal Escalation Governance","guidance":"Provisioning approach (IFRS 9 expected credit loss, simplified matrix by ageing), legal escalation stages in KSA (final notice, Najiz enforcement of promissory notes, commercial court), write-off approval and Zakat/tax treatment note."},
+  {"key":"review_meetings","title":"Collection Meeting & Review Governance","guidance":"Weekly collection review and monthly credit review: chair, attendees, agenda table, inputs, outputs, minutes and action tracking."},
+  {"key":"sops","title":"Standard Operating Procedures — Credit & Collection SOPs","guidance":"Write 6–8 complete SOPs. Each SOP: a heading like SOP CR-01: <NAME>; a two-column table (Objective, Scope, Owner, Zero-Tolerance Rule); a Step-by-Step Workflow table (Step | Process action | Responsible | Output / document | Timeline); then Controls, Risks & Governance Requirements bullets."},
+  {"key":"forms","title":"Credit Forms & Templates","guidance":"Reproduce 4–6 ready-to-use forms (customer credit application, credit approval form, credit limit change request, customer visit report, write-off request) as field tables with blank value columns."},
+  {"key":"registers","title":"Credit Registers, Trackers & Databases","guidance":"For each register (customer credit master, collection follow-up tracker, promise-to-pay tracker, security cheque register, bad debt register): purpose, owner, update frequency and a table of fields."},
+  {"key":"dashboard","title":"Receivables Dashboard & KPI Framework","guidance":"Dashboard panels table (Panel | What it shows | Green | Amber | Red). KPI table (KPI | Formula | Target | Frequency | Owner). Where metrics were computed from client data, show actual value and status."},
+  {"key":"policies","title":"Credit & Collection Policy Manual","guidance":"Write 6–8 policies titled POLICY CP-01: <NAME> each with numbered clauses (CP-01.1 <clause title> followed by a paragraph)."},
+  {"key":"checklists","title":"Credit Governance Checklists","guidance":"5–6 checklists titled CHECKLIST CR-01 — <NAME>, each a table: # | Checklist item | Responsible | Done (✓) | Date."},
+  {"key":"roadmap","title":"Implementation Roadmap — 3-Phase Credit Transformation","guidance":"Phase 1 critical foundations (weeks 1–3), Phase 2 governance & reporting (months 2–3), Phase 3 optimisation (months 4–6). Each phase: numbered actions with owner, starting from the assessment date. Prioritise the client''s weakest areas."},
+  {"key":"conclusion","title":"Conclusion & Strategic Outlook","guidance":"Expected outcomes and measurable targets (e.g. DSO reduction, overdue % target) and the governance transformation outlook."}
+ ]'::jsonb),
+('sales', 'Sales & Customer Handling', 'المبيعات وخدمة العملاء', 'Counter/field sales, customer classification, product push, salesman KPIs, targets, incentives and sales reporting.', null, '{}', 20, '[]'),
+('cash', 'Cash Control', 'الرقابة النقدية', 'Cash receipts, payments, petty cash, cashier accountability, daily closing, deposits and surprise counts.', null, '{}', 30, '[]'),
+('treasury', 'Treasury & Banking', 'الخزينة والبنوك', 'Bank accounts, online banking controls, payments, cheques, bank reconciliation, cash flow and liquidity.', null, '{}', 40, '[]'),
+('finance', 'Finance & Accounts', 'المالية والمحاسبة', 'Finance team structure, monthly close, management reporting, budgeting, variance analysis and expense controls.', null, '{}', 50, '[]'),
+('procurement', 'Procurement & Inventory Replenishment', 'المشتريات وإعادة التموين', 'Min/max/reorder levels, purchase requisitions, RFQs, landed cost, supplier scorecards and rebates.', null, '{}', 60, '[]'),
+('hr', 'Human Resources', 'الموارد البشرية', 'Organisation structure, recruitment, onboarding, attendance, leave, payroll, performance and exit.', null, '{}', 70, '[]'),
+('compliance', 'Government & Regulatory Compliance', 'الامتثال الحكومي والتنظيمي', 'Iqama, visas, GOSI, Qiwa, Mudad, CR, municipality and civil defence licences, insurance and PRO/GRO operations.', null, '{}', 80, '[]'),
+('tax', 'Tax & Audit', 'الضرائب والتدقيق', 'VAT, withholding tax, Zakat/CIT, customs and Fasah reconciliation, ZATCA e-invoicing and audit readiness.', null, '{}', 90, '[]'),
+('fleet', 'Fleet Management', 'إدارة الأسطول', 'Vehicle master data, preventive maintenance, fuel control, GPS monitoring, drivers and accidents.', null, '{}', 100, '[]'),
+('van_sales', 'Van Sales', 'مبيعات الشاحنات', 'Van-as-profit-centre: transfer pricing, van P&L, van stock and cash reconciliation, routes and incentives.', null, '{}', 110, '[]'),
+('expansion', 'Business Expansion & Growth', 'التوسع والنمو', 'Branch feasibility, market and competitor studies, product line expansion and growth monitoring.', null, '{}', 120, '[]'),
+('governance', 'Management & Family Business Governance', 'الحوكمة الإدارية', 'Ownership and partnership governance, authority matrix, meetings, remuneration, drawings and management reporting.', null, '{}', 130, '[]'),
+('purchase_matching', 'Receiving & PO–GRN–Invoice Matching', 'الاستلام ومطابقة أوامر الشراء', 'Receiving controls at stores and branches, 3-way/2-way matching and out-of-PO approvals.', null, '{}', 140, '[]');
+
+-- Credit & Collections questionnaire. Maturity answers: 0 not in place, 1 informal, 2 documented,
+-- 3 implemented consistently, 4 monitored & improved.
+with d as (select id from public.departments where code = 'credit')
+insert into public.questions (department_id, code, dimension, text, answer_type, weight, guidance, sort)
+select d.id, q.code, q.dimension, q.text, q.answer_type, q.weight, q.guidance, q.sort from d, (values
+ ('CR-P1','Profile','How many customers buy on credit, and what credit terms are usually given?','text',0,'Context only, not scored.',1),
+ ('CR-P2','Profile','Approximate annual credit sales (SAR)','number',0,'Used to compute DSO if not entered with the AR upload.',2),
+ ('CR-G1','Governance & Roles','A named person owns credit control, and sales and finance roles in credit decisions are defined in writing.','maturity',1,null,10),
+ ('CR-G2','Governance & Roles','A written credit policy approved by management exists and is communicated to sales and finance.','maturity',1,null,11),
+ ('CR-O1','Onboarding & KYC','New credit customers complete a credit application with KYC documents (CR, VAT certificate, national address, owner ID, bank details).','maturity',1.5,null,20),
+ ('CR-O2','Onboarding & KYC','Trade references and a site visit are verified before credit is granted.','maturity',1,null,21),
+ ('CR-O3','Onboarding & KYC','Customer master data in the ERP is complete (credit limit, terms, contact person, salesman).','maturity',1,null,22),
+ ('CR-A1','Approval & Limits','A credit approval authority matrix defines who approves which credit limit amounts.','maturity',1.5,null,30),
+ ('CR-A2','Approval & Limits','Credit limits are enforced in the ERP — invoicing above the limit or with overdue balances is blocked or needs approval.','maturity',1.5,null,31),
+ ('CR-A3','Approval & Limits','Credit limits and terms are reviewed at least once a year.','maturity',1,null,32),
+ ('CR-R1','Risk Classification','Customers are risk-rated (e.g. Green/Amber/Red) based on payment behaviour, and the rating drives actions.','maturity',1,null,40),
+ ('CR-R2','Risk Classification','Customers are segmented (e.g. A/B/C by purchase value) with different terms and follow-up intensity.','maturity',1,null,41),
+ ('CR-C1','Ageing & Collections','An accurate AR ageing report is produced and reviewed at least weekly.','maturity',1.5,null,50),
+ ('CR-C2','Ageing & Collections','Every overdue account has a named collection owner and a collection target.','maturity',1.5,null,51),
+ ('CR-C3','Ageing & Collections','Collection follow-ups are logged (calls, visits, promises to pay, next action).','maturity',1,null,52),
+ ('CR-C4','Ageing & Collections','There is a defined escalation ladder by ageing bucket (reminder → supply stop → final notice → legal).','maturity',1,null,53),
+ ('CR-C5','Ageing & Collections','A weekly collection forecast is prepared and compared with actual collections.','maturity',1,null,54),
+ ('CR-S1','Security & Documentation','Security instruments (promissory notes, PDCs, guarantees) are obtained where required and tracked in a register.','maturity',1,null,60),
+ ('CR-S2','Security & Documentation','Customer statements and balance confirmations are sent regularly and disputes are tracked.','maturity',1,null,61),
+ ('CR-B1','Bad Debt & Legal','Doubtful debts are identified and provisioned (e.g. IFRS 9 expected credit loss).','maturity',1,null,70),
+ ('CR-B2','Bad Debt & Legal','A legal recovery route is defined (e.g. Najiz enforcement of promissory notes, commercial court).','maturity',1,null,71),
+ ('CR-B3','Bad Debt & Legal','Write-offs require documented approval at management level.','maturity',1,null,72),
+ ('CR-K1','Reporting & Review','Receivables KPIs (DSO, % overdue, collection efficiency) are measured and reported to management.','maturity',1.5,null,80),
+ ('CR-K2','Reporting & Review','A regular collection / credit review meeting is held with minutes and action tracking.','maturity',1,null,81),
+ ('CR-K3','Reporting & Review','Customer profitability (after discounts, returns and days to pay) is analysed for major customers.','maturity',0.5,null,82),
+ ('CR-X1','Sales–Credit Coordination','Salesmen are responsible for collections and their incentives consider collections, not only sales.','maturity',1,null,90),
+ ('CR-X2','Sales–Credit Coordination','Sales cannot override a credit block without written finance approval.','maturity',1,null,91)
+) as q(code, dimension, text, answer_type, weight, guidance, sort);
