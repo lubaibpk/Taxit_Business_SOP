@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildClientContext } from "@/lib/report-context";
-import { writeSection } from "@/lib/ai/write-section";
+import { sectionTier, writeSection } from "@/lib/ai/write-section";
 import { blocksToText, type Block } from "@/lib/blocks";
 
 // 300s is the Vercel Hobby limit; on a Pro plan raise this to 800 for the longest sections (SOPs, policies)
@@ -28,6 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const item = ctx.skeleton.find((s) => s.key === section.key);
     const existing = (section.content?.blocks ?? []) as Block[];
     const blocks = await writeSection({
+      tier: sectionTier(section.key, item?.tier),
       language: report.language,
       clientContext: ctx.text,
       sectionTitle: section.title,

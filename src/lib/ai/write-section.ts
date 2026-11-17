@@ -1,7 +1,23 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { cleanBlocks, sectionJsonSchema, type Block } from "@/lib/blocks";
 
-export const REPORT_MODEL = "claude-opus-5-5";
+// Two tiers keep cost down without losing accuracy where it matters:
+// - "analysis" sections interpret the client's own answers and figures (findings, risk, roadmap) →
+//   the strongest model at high effort.
+// - "template" sections are long, structured, ready-to-use material (SOPs, forms, registers,
+//   policies, checklists, KPI tables) that follow fixed formats → a cheaper model at medium effort.
+//   These are also the longest sections, so this is where most of the saving comes from.
+const ANALYSIS = { model: "claude-opus-5-5", effort: "high" } as const;
+const TEMPLATE = { model: "claude-sonnet-5-5", effort: "medium" } as const;
+
+const TEMPLATE_KEYS = /^(sops|forms|registers|policies|checklists|dashboard)$/;
+
+export type SectionTier = "analysis" | "template";
+
+/** A skeleton item can set its tier explicitly; otherwise it is inferred from the section key. */
+export function sectionTier(key: string, explicit?: SectionTier): SectionTier {
+  return explicit ?? (TEMPLATE_KEYS.test(key) ? "template" : "analysis");
+}
 
 const STYLE_GUIDE = `You are a senior management consultant at a Saudi advisory firm. You write department-level
 governance and SOP reports ("operating systems") for privately owned Saudi businesses — often family-run,
@@ -35,6 +51,7 @@ Output format: JSON matching the provided schema — an ordered list of blocks.
 Do NOT repeat the section title itself as the first heading — it is added automatically.`;
 
 export type SectionJob = {
+  tier: SectionTier;
   language: "en" | "ar";
   clientContext: string; // identical for every section of one report (cached)
   sectionTitle: string;
@@ -59,13 +76,14 @@ export async function writeSection(job: SectionJob): Promise<Block[]> {
     .filter(Boolean)
     .join("\n\n");
 
+  const cfg = job.tier === "template" ? TEMPLATE : ANALYSIS;
   const stream = client.beta.messages.stream({
-    model: REPORT_MODEL,
+    model: cfg.model,
     max_tokens: 64000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
     output_config: {
-      effort: "high",
+      effort: cfg.effort,
       format: { type: "json_schema", schema: sectionJsonSchema as unknown as Record<string, unknown> },
     },
     system: [
@@ -74,7 +92,17 @@ export async function writeSection(job: SectionJob): Promise<Block[]> {
     ],
     messages: [{ role: "user", content: ask }],
   });
-  const message = await stream.finalMessage();
+  let message;
+  try {
+    message = await stream.finalMessage();
+  } catch (e) {
+    if (e instanceof Anthropic.AuthenticationError) throw new Error("The Claude API key on the server is invalid. Check ANTHROPIC_API_KEY in Vercel.");
+    if (e instanceof Anthropic.RateLimitError) throw new Error("Claude API rate limit reached. Wait a minute and try again.");
+    if (e instanceof Anthropic.BadRequestError && /credit balance/i.test(e.message))
+      throw new Error("The Claude API account is out of credit. Add credit at console.anthropic.com → Billing, then try again.");
+    if (e instanceof Anthropic.APIError) throw new Error(`Claude API error (${e.status}). Please try again.`);
+    throw e;
+  }
 
   if (message.stop_reason === "refusal") throw new Error("The model declined to write this section. Edit the instructions and try again.");
   if (message.stop_reason === "max_tokens") throw new Error("The section was too long and got cut off. Ask for a shorter version in the instructions.");

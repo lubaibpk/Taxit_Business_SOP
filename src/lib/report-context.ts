@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { MATURITY_LEVELS, computeScores, effectiveAnswers, scoreBand, type ResponseRow } from "@/lib/scoring";
 
-export type SkeletonItem = { key: string; title: string; guidance: string };
+export type SkeletonItem = { key: string; title: string; guidance: string; tier?: "analysis" | "template" };
 
 /** Loads everything known about one engagement + department and turns it into the model's briefing. */
 export async function buildClientContext(supabase: SupabaseClient, engagementId: string, departmentId: string) {
