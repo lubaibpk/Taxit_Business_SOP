@@ -54,19 +54,19 @@ export function buildSkeleton(d: DepartmentDef): SkeletonItem[] {
     {
       key: "sops",
       title: `Standard Operating Procedures — ${d.name} SOPs`,
-      guidance: `Write 6–8 complete SOPs: ${d.sops}. Each SOP: heading "SOP ${p}-01: <NAME>"; a two-column table (Objective, Scope, Owner, Zero-Tolerance Rule); a Step-by-Step Workflow table (Step | Process action | Responsible | Output / document | Timeline); then Controls, Risks & Governance Requirements bullets.`,
+      guidance: `Write 6–8 complete SOPs: ${d.sops}. Each SOP starts with a level-2 heading "SOP ${p}-01: <NAME>", then a two-column table (Objective, Scope, Owner, Zero-Tolerance Rule); a Step-by-Step Workflow table (Step | Process action | Responsible | Output / document | Timeline); then Controls, Risks & Governance Requirements bullets.`,
       tier: "template",
     },
     {
       key: "forms",
       title: `${d.name} Forms & Templates`,
-      guidance: `Reproduce 4–6 ready-to-use forms coded FORM ${p}-01 etc.: ${d.forms}. Each as a field table (Field | Details / entry) with blank entry cells and an approval/signature block.`,
+      guidance: `Reproduce 4–6 ready-to-use forms: ${d.forms}. Each form starts with a level-2 heading "FORM ${p}-01: <NAME>", then a field table (Field | Details / entry) with blank entry cells, then an approval and signature table.`,
       tier: "template",
     },
     {
       key: "registers",
       title: `${d.name} Registers, Trackers & Databases`,
-      guidance: `For each register (${d.registers}): purpose, owner, update frequency, and a table of its fields (Field | Description | Example).`,
+      guidance: `For each register (${d.registers}): a level-2 heading "REG ${p}-01: <NAME>", a paragraph with purpose, owner and update frequency, and a table of its fields (Field | Description | Example).`,
       tier: "template",
     },
     {
@@ -78,13 +78,13 @@ export function buildSkeleton(d: DepartmentDef): SkeletonItem[] {
     {
       key: "policies",
       title: `${d.name} Policy Manual`,
-      guidance: `Write 6–8 policies titled "POLICY ${p}P-01: <NAME>": ${d.policies}. Each with numbered clauses (${p}P-01.1 <clause title> followed by a paragraph).`,
+      guidance: `Write 6–8 policies: ${d.policies}. Each starts with a level-2 heading "POLICY ${p}P-01: <NAME>", followed by numbered clauses: a level-3 heading "${p}P-01.1 <clause title>" then a paragraph, for every clause.`,
       tier: "template",
     },
     {
       key: "checklists",
       title: `${d.name} Governance Checklists`,
-      guidance: `5–6 checklists titled "CHECKLIST ${p}-01 — <NAME>": ${d.checklists}. Each a table: # | Checklist item | Responsible | Done (✓) | Date.`,
+      guidance: `5–6 checklists: ${d.checklists}. Each starts with a level-2 heading "CHECKLIST ${p}-01: <NAME>", then a table: # | Checklist item | Responsible | Done (✓) | Date.`,
       tier: "template",
     },
     {

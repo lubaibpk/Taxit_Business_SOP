@@ -10,7 +10,18 @@ export type Block =
 
 export type SectionContent = { blocks: Block[] };
 
-/** JSON schema the model must follow when writing a section. */
+/**
+ * JSON schema the model must follow when writing a section. Each block type is its own variant
+ * with every field required, so the model cannot put a heading's text or a table's rows under
+ * the wrong field name (a loose schema let content drift into fields the app then discarded).
+ */
+const strings = { type: "array", items: { type: "string" } } as const;
+const variant = (type: string, props: Record<string, unknown>) => ({
+  type: "object",
+  additionalProperties: false,
+  required: ["type", ...Object.keys(props)],
+  properties: { type: { type: "string", enum: [type] }, ...props },
+});
 export const sectionJsonSchema = {
   type: "object",
   additionalProperties: false,
@@ -19,19 +30,14 @@ export const sectionJsonSchema = {
     blocks: {
       type: "array",
       items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["type"],
-        properties: {
-          type: { type: "string", enum: ["heading", "paragraph", "bullets", "numbered", "table", "callout"] },
-          text: { type: "string", description: "heading or paragraph text" },
-          level: { type: "integer", description: "heading level: 2 or 3" },
-          title: { type: "string", description: "callout title" },
-          tone: { type: "string", enum: ["critical", "info"] },
-          items: { type: "array", items: { type: "string" }, description: "bullets, numbered or callout items" },
-          headers: { type: "array", items: { type: "string" } },
-          rows: { type: "array", items: { type: "array", items: { type: "string" } } },
-        },
+        anyOf: [
+          variant("heading", { text: { type: "string" }, level: { type: "integer", enum: [2, 3] } }),
+          variant("paragraph", { text: { type: "string" } }),
+          variant("bullets", { items: strings }),
+          variant("numbered", { items: strings }),
+          variant("table", { headers: strings, rows: { type: "array", items: strings } }),
+          variant("callout", { title: { type: "string" }, items: strings, tone: { type: "string", enum: ["critical", "info"] } }),
+        ],
       },
     },
   },

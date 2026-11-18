@@ -1,22 +1,10 @@
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
+import { launchBrowser } from "@/lib/pdf/browser";
 import { createClient } from "@/lib/supabase/server";
 import { loadReportForExport } from "@/lib/export/load-report";
 import { headerFooter, renderReportHtml } from "@/lib/pdf/render-html";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
-
-// On Vercel we use the bundled serverless Chromium; locally, the installed Google Chrome.
-async function launchBrowser() {
-  if (process.env.VERCEL) {
-    return puppeteer.launch({ args: chromium.args, executablePath: await chromium.executablePath(), headless: true });
-  }
-  return puppeteer.launch({
-    executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    headless: true,
-  });
-}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

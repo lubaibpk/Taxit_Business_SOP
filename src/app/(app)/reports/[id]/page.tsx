@@ -36,6 +36,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             <Link href={`/engagements/${eng.id}/${report.departments.code}?step=notes`} className="btn-secondary btn-sm">
               ✎ Your findings & notes
             </Link>
+            <Link href={`/reports/${id}/pack`} className="btn btn-sm">
+              📁 Document pack
+            </Link>
             <Pill tone={st.tone}>{st.label}</Pill>
           </>
         }

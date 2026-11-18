@@ -38,8 +38,9 @@ export type RenderInput = {
   sections: { title: string; blocks: Block[] }[];
 };
 
-export async function renderReport(input: RenderInput): Promise<Buffer> {
-  const rtl = input.language === "ar";
+/** Shared building blocks (runs, paragraphs, tables, report blocks) for any Word document. */
+export function docKit(language: "en" | "ar") {
+  const rtl = language === "ar";
   const t = (en: string, ar: string) => (rtl ? ar : en);
   const align = rtl ? AlignmentType.RIGHT : AlignmentType.LEFT;
 
@@ -135,6 +136,12 @@ export async function renderReport(input: RenderInput): Promise<Buffer> {
       }
     }
   };
+
+  return { rtl, t, align, run, para, table, renderBlock };
+}
+
+export async function renderReport(input: RenderInput): Promise<Buffer> {
+  const { rtl, t, align, run, para, table, renderBlock } = docKit(input.language);
 
   // ── Cover page ──
   const clientName = rtl && input.client.name_ar ? input.client.name_ar : input.client.name;

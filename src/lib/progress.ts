@@ -75,7 +75,7 @@ export async function loadEngagementProgress(supabase: SupabaseClient, engagemen
       else if (!latestReport) next = { label: dataSupported && !dataUploaded ? "Upload data or create report" : "Create report", href: `${base}?step=${dataSupported && !dataUploaded ? "data" : "report"}` };
       else if (latestReport.written < latestReport.total) next = { label: "Write report sections", href: `/reports/${latestReport.id}` };
       else if (latestReport.status !== "approved") next = { label: "Review & approve", href: `/reports/${latestReport.id}` };
-      else next = { label: "Download report", href: `/reports/${latestReport.id}` };
+      else next = { label: "Open document pack", href: `/reports/${latestReport.id}/pack` };
 
       return {
         departmentId: d.id,
@@ -114,6 +114,7 @@ export function deptSteps(p: DeptProgress, engagementId: string) {
   steps.push(
     { label: "Report", state: written ? "done" : qDone ? "current" : "todo", href: r ? `/reports/${r.id}` : `${base}?step=report`, detail: r ? `${r.written}/${r.total} written` : "Not created" },
     { label: "Approval", state: approved ? "done" : written ? "current" : "todo", href: r ? `/reports/${r.id}` : undefined, detail: r ? `${r.approved}/${r.total} approved` : undefined },
+    { label: "Document pack", state: approved ? "current" : "todo", href: r ? `/reports/${r.id}/pack` : undefined, detail: "Files & trackers" },
   );
   return steps;
 }

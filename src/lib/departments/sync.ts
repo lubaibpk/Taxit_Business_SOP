@@ -33,17 +33,25 @@ export async function writeDepartments(supabase: SupabaseClient, codes: string[]
 }
 
 /**
- * Loads any library department that is still empty in the database (no outline yet).
- * Called on page load for staff, so newly deployed departments appear without a manual step.
+ * Loads library departments that are missing or out of date in the database.
+ * Called on page load for staff, so new and updated outlines apply without a manual step.
  */
 export async function ensureDepartmentsLoaded(supabase: SupabaseClient) {
   const { data, error } = await supabase.from("departments").select("code, report_skeleton");
   if (error) return;
-  const loaded = new Set((data ?? []).filter((d) => (d.report_skeleton as unknown[]).length > 0).map((d) => d.code));
-  const missing = DEPARTMENT_LIBRARY.map((d) => d.code).filter((c) => !loaded.has(c));
-  if (!missing.length) return;
+  // Postgres reorders JSON object keys, so compare with keys sorted
+  const canonical = (v: unknown): string =>
+    Array.isArray(v)
+      ? `[${v.map(canonical).join(",")}]`
+      : v && typeof v === "object"
+        ? `{${Object.keys(v as object).sort().map((k) => `${JSON.stringify(k)}:${canonical((v as Record<string, unknown>)[k])}`).join(",")}}`
+        : JSON.stringify(v);
+  const current = new Map((data ?? []).map((d) => [d.code, canonical(d.report_skeleton)]));
+  // load departments that are missing, and refresh any whose outline changed in a new app version
+  const stale = DEPARTMENT_LIBRARY.filter((d) => current.get(d.code) !== canonical(buildSkeleton(d))).map((d) => d.code);
+  if (!stale.length) return;
   try {
-    await writeDepartments(supabase, missing);
+    await writeDepartments(supabase, stale);
   } catch (e) {
     console.error("Department library auto-load failed:", e);
   }

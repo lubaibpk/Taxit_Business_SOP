@@ -5,10 +5,11 @@ import { cleanBlocks, sectionJsonSchema, type Block } from "@/lib/blocks";
 // - "analysis" sections interpret the client's own answers and figures (findings, risk, roadmap) →
 //   the strongest model at high effort.
 // - "template" sections are long, structured, ready-to-use material (SOPs, forms, registers,
-//   policies, checklists, KPI tables) that follow fixed formats → a cheaper model at medium effort.
+//   policies, checklists, KPI tables) that follow fixed formats → a cheaper model, also at high effort
+//   so every SOP / form / policy is written out in full.
 //   These are also the longest sections, so this is where most of the saving comes from.
 const ANALYSIS = { model: "claude-opus-5-5", effort: "high" } as const;
-const TEMPLATE = { model: "claude-sonnet-5-5", effort: "medium" } as const;
+const TEMPLATE = { model: "claude-sonnet-5-5", effort: "high" } as const;
 
 const TEMPLATE_KEYS = /^(sops|forms|registers|policies|checklists|dashboard)$/;
 
@@ -43,6 +44,14 @@ House style (follow strictly):
   not invent statistics. Where client data exists, quote the actual figures.
 - No marketing tone, no emojis, no markdown syntax inside text fields (no **, no #). Plain text only.
 
+Depth: each section is a full chapter of a professional consulting report, normally 2–6 printed pages.
+Write the substance out in full — tables with real rows, complete workflows, numbered clauses. A section that
+is only an introduction and a summary box is a failure. When the section asks for several SOPs, forms,
+policies, checklists or registers, write EVERY one of them completely, each starting with its own level-2
+heading that begins with its code (e.g. "SOP CR-01: Customer Credit Onboarding", "FORM CR-02: Credit Approval
+Form", "POLICY CP-03: Credit Limit Policy", "CHECKLIST CR-01: Customer Credit Onboarding", "REG CR-02:
+Collection Follow-Up Tracker"). Put an item's content only after its heading, and nothing unrelated after it.
+
 Output format: JSON matching the provided schema — an ordered list of blocks.
 - heading (level 2 for sub-sections like "4.1 Authority Matrix", level 3 for minor headings)
 - paragraph, bullets, numbered
@@ -62,7 +71,9 @@ export type SectionJob = {
 };
 
 /** Writes one section; if the model's answer can't be used, tries once more before giving up. */
-export async function writeSection(job: SectionJob): Promise<Block[]> {
+export type SectionResult = { blocks: Block[]; meta: { model: string; output_tokens: number; stop_reason: string | null; dropped: number } };
+
+export async function writeSection(job: SectionJob): Promise<SectionResult> {
   try {
     return await attemptSection(job);
   } catch (e) {
@@ -87,7 +98,7 @@ class UnusableOutput extends Error {
   }
 }
 
-async function attemptSection(job: SectionJob): Promise<Block[]> {
+async function attemptSection(job: SectionJob): Promise<SectionResult> {
   const client = new Anthropic();
 
   const ask = [
@@ -160,5 +171,9 @@ async function attemptSection(job: SectionJob): Promise<Block[]> {
   }
   const blocks = cleanBlocks(parsed);
   if (!blocks.length) throw new UnusableOutput(`stop: ${message.stop_reason}, ${text.length} chars: ${text.slice(0, 120).replace(/\s+/g, " ")}`);
-  return blocks;
+  const raw = (parsed as { blocks?: unknown[] } | null)?.blocks;
+  return {
+    blocks,
+    meta: { model: message.model, output_tokens: message.usage.output_tokens, stop_reason: message.stop_reason, dropped: Array.isArray(raw) ? Math.max(0, raw.length - blocks.length) : 0 },
+  };
 }

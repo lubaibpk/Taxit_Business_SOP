@@ -27,7 +27,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const ctx = await buildClientContext(supabase, report.engagement_id, report.department_id);
     const item = ctx.skeleton.find((s) => s.key === section.key);
     const existing = (section.content?.blocks ?? []) as Block[];
-    const blocks = await writeSection({
+    const { blocks, meta } = await writeSection({
       tier: sectionTier(section.key, item?.tier),
       language: report.language,
       clientContext: ctx.text,
@@ -39,7 +39,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     await supabase
       .from("report_sections")
-      .update({ content: { blocks }, status: "draft", generated_at: new Date().toISOString(), updated_by: user.id, updated_at: new Date().toISOString() })
+      .update({ content: { blocks }, gen_meta: meta, status: "draft", error: null, generated_at: new Date().toISOString(), updated_by: user.id, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (report.status === "approved") await supabase.from("reports").update({ status: "in_review", approved_by: null, approved_at: null }).eq("id", report.id);
     return NextResponse.json({ blocks });
