@@ -84,7 +84,7 @@ export function DepartmentDesigner({ returnTo }: { returnTo: string }) {
         )}
         <div className="flex items-center gap-3">
           <button className="btn" onClick={design} disabled={designing || !name.trim()}>
-            {designing ? "Designing… (about a minute)" : draft ? "Redesign with AI" : "Design with AI"}
+            {designing ? <><span className="spinner" />Designing… (about a minute)</> : draft ? "Redesign with AI" : "Design with AI"}
           </button>
           {designing && <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-brand" />}
         </div>
@@ -200,7 +200,7 @@ export function DepartmentDesigner({ returnTo }: { returnTo: string }) {
                 Discard
               </button>
               <button className="btn" onClick={save} disabled={saving}>
-                {saving ? "Saving…" : "Save department"}
+                {saving ? <><span className="spinner" />Saving…</> : "Save department"}
               </button>
             </div>
           </div>

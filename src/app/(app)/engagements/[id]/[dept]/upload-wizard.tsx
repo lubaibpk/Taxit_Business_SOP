@@ -105,7 +105,7 @@ export function UploadWizard({ engagementId, departmentId }: { engagementId: str
             <input className="input" value={sales} onChange={(e) => setSales(e.target.value)} placeholder="e.g. 4,500,000" />
           </div>
           <button className="btn" onClick={doImport} disabled={busy}>
-            {busy ? "Importing…" : "Import data"}
+            {busy ? <><span className="spinner" />Importing…</> : "Import data"}
           </button>
         </div>
       )}

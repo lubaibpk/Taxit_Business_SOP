@@ -98,7 +98,7 @@ export function FindingsEditor({
               Save
             </button>
             <button className="btn" onClick={() => save(true)} disabled={saving}>
-              {saving ? "Saving…" : "Save & continue →"}
+              {saving ? <><span className="spinner" />Saving…</> : "Save & continue →"}
             </button>
           </div>
         </div>

@@ -62,7 +62,7 @@ export default function LoginPage() {
         </div>
         {msg && <p className="text-sm text-red-700">{msg}</p>}
         <button className="btn w-full" disabled={busy}>
-          {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+          {busy ? <><span className="spinner" />Please wait…</> : mode === "signin" ? "Sign in" : "Create account"}
         </button>
         <button type="button" className="w-full text-sm text-blue-800" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>
           {mode === "signin" ? "New team member? Create an account" : "Already have an account? Sign in"}

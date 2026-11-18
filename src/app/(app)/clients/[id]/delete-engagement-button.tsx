@@ -23,7 +23,7 @@ export function DeleteEngagementButton({ id, clientId }: { id: string; clientId:
         });
       }}
     >
-      {busy ? "Deleting…" : "Delete"}
+      {busy ? <><span className="spinner" />Deleting…</> : "Delete"}
     </button>
   );
 }

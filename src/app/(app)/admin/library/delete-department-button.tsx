@@ -22,7 +22,7 @@ export function DeleteDepartmentButton({ id, name }: { id: string; name: string 
         });
       }}
     >
-      {busy ? "Deleting…" : "Delete"}
+      {busy ? <><span className="spinner" />Deleting…</> : "Delete"}
     </button>
   );
 }

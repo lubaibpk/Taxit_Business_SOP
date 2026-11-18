@@ -115,7 +115,7 @@ export function ReportEditor(props: {
   if (written < total)
     primary = (
       <button className="btn" onClick={generateMissing} disabled={running}>
-        {running ? `Writing sections… (${written}/${total})` : written ? `Write remaining ${total - written} sections` : "Write all sections with AI"}
+        {running ? <><span className="spinner" />{`Writing sections… (${written}/${total})`}</> : written ? `Write remaining ${total - written} sections` : "Write all sections with AI"}
       </button>
     );
   else if (props.reportStatus === "draft")

@@ -26,7 +26,7 @@ export function SyncButton() {
           })
         }
       >
-        {busy ? "Loading…" : "Load / update library"}
+        {busy ? <><span className="spinner" />Loading…</> : "Load / update library"}
       </button>
     </div>
   );
