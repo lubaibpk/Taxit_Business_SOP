@@ -42,9 +42,13 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <form onSubmit={submit} className="card w-full max-w-sm space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Business System Builder</h1>
-          <p className="text-sm text-gray-500">{mode === "signin" ? "Sign in to continue" : "Create a staff account"}</p>
+        <div className="flex flex-col items-center gap-3 pb-2 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Logo" className="h-20 w-20 object-contain" />
+          <div>
+            <h1 className="text-lg font-semibold text-brand">Business System Builder</h1>
+            <p className="text-sm text-gray-500">{mode === "signin" ? "Sign in to continue" : "Create a staff account"}</p>
+          </div>
         </div>
         {mode === "signup" && (
           <div>

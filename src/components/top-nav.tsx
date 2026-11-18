@@ -15,7 +15,8 @@ export function TopNav({ isAdmin, name, role }: { isAdmin: boolean; name: string
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 font-semibold text-brand">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand text-xs font-bold text-white">BS</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
             <span className="hidden sm:inline">Business System Builder</span>
           </Link>
           <nav className="flex gap-1 text-sm">
